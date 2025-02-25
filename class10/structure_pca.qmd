@@ -1,0 +1,80 @@
+---
+title: "Comparative structure analysis"
+author: "Barry"
+format: html
+---
+
+Here we run through a complete "pipeline" of structure analysis that begins with a single sequence identifer and ends in a PCA analysis.
+
+```{r}
+library(bio3d)
+```
+
+## Step 1. Get a sequence
+Retrive a sequence for the protein we are intrested in. We wll take ADK "1ake_A"
+
+```{r}
+id <- "1ake_A"
+aa <- get.seq(id)
+aa
+
+```
+
+## Step 2. Blast search
+Run a BLAST search of the PDB for all related sequences to our input `aa`
+
+```{r}
+blast <- blast.pdb(aa)
+```
+
+```{r}
+hits <- plot(blast)
+```
+
+## Step 3. Download all structures
+These are our "top hits" i.e. all the structures in the PDB databasse related to our input sequence.
+
+```{r}
+hits$pdb.id
+```
+```{r}
+# Download releated PDB files
+files <- get.pdb(hits$pdb.id, path="pdbs", split=TRUE, gzip=TRUE)
+```
+
+## Step 4. Align and superpose
+
+```{r}
+pdbs <- pdbaln(files, fit = TRUE, exefile="msa")
+```
+
+```{r}
+pdbs
+```
+## Step 5. PCA
+
+Let's use our old friend PCA to make sense of these confussing, complicated structure relationships.
+
+```{r}
+pc <- pca(pdbs)
+plot(pc)
+```
+
+Let's make a trajectory (or movie) of the main conformational changes captured 
+by PC1. We wil use the `mktrj()` function for this...
+
+```{r}
+mktrj(pc, file="pca_result.pdb")
+```
+
+
+Back of the envelope comparasion of the PDB size to UniProt
+
+```{r}
+uniprot <- 253206171
+pdb <- 231029
+pdb/uniprot * 100
+```
+
+
+

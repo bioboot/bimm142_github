@@ -1,0 +1,216 @@
+---
+title: "Class 7: Machine Learning 1"
+author: "Barry (PID 911)"
+format: pdf
+---
+
+Today we will explore unsuperivised machine learning methods including clustering and dimensionallity reduction methods.
+
+Let's start by making up some data (where we know there are clear groups) that we can use to test out different clustering methods.
+
+We can use the `rnorm()` function to help us here:
+
+```{r}
+hist( rnorm(n=3000, mean=3) )
+```
+
+Make data `z` with two "clusters" 
+
+```{r}
+x <- c( rnorm(30, mean=-3), 
+        rnorm(30, mean=+3) )
+
+z <- cbind(x=x, y=rev(x))
+head(z)
+
+plot(z)
+```
+How big is `z`
+```{r}
+nrow(z)
+ncol(z)
+```
+
+
+## K-means clustering
+
+The main function in "base" R for K-means clustering is called `kmeans()`
+
+```{r}
+k <- kmeans(z, centers = 2)
+k
+```
+```{r}
+attributes(k)
+```
+> Q. How many points lie in each cluster?
+
+```{r}
+k$size
+```
+
+> Q. What component of our results tells us about the cluster membership (i.e. which point likes in which cluster)?
+
+
+```{r}
+k$cluster
+```
+> Q. Center of each cluster?
+
+```{r}
+k$centers
+```
+
+> Q. Put this result info together and make a little "base R" plot of our clustering result. Also add the cluster center points to this plot.
+
+```{r}
+plot(z, col="blue")
+```
+
+```{r}
+plot(z, col=c("blue","red"))
+```
+
+You can color by number.
+```{r}
+plot(z, col=c(1,2))
+```
+
+Plot colored by cluster membership:
+
+```{r}
+plot(z, col=k$cluster)
+points(k$centers, col="blue", pch=15)
+```
+
+
+> Q. Run kmeans on our input `z` and define 4 clusters making the same result vizualization plot as above (plot of z collored by cluster memnbership).
+
+```{r}
+k4 <- kmeans(z, centers = 4)
+plot(z, col=k4$cluster)
+```
+
+
+## Hierarchical Clustering
+
+The main function in base R for this called `hclust()` it will take as input a distance matrix (key point is that you can't just give your "raw" data as input - you have to first calculate a distance matrix from your data).
+
+```{r}
+d <- dist(z)
+hc <- hclust(d)
+hc
+```
+
+```{r}
+plot(hc)
+abline(h=10, col="red")
+```
+Once I inspect the "tree" I can "cut" the tree to yield my groupings or clusters. The function to this is called `cutree()`
+
+```{r}
+grps <- cutree(hc, h=10)
+```
+
+```{r}
+plot(z, col=grps)
+```
+
+## Hands on with Principal Component Analysis (PCA)
+
+Let's examine some silly 17-dimensional data detailing food consumption in the UK (England, Scotland, Wales and N. Ireland). Are these countries eating habits different or similar and if so how?
+
+### Data import
+```{r}
+url <- "https://tinyurl.com/UK-foods"
+x <- read.csv(url, row.names=1)
+x
+```
+
+> Q1. How many rows and columns are in your new data frame named x? What R functions could you use to answer this questions?
+
+```{r}
+nrow(x)
+ncol(x)
+dim(x)
+```
+
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+
+```
+
+```{r}
+barplot(as.matrix(x), beside=F, col=rainbow(nrow(x)))
+
+```
+
+> Q5: Generating all pairwise plots may help somewhat. Can you make sense of the following code and resulting figure? What does it mean if a given point lies on the diagonal for a given plot?
+
+
+```{r}
+pairs(x, col=rainbow(nrow(x)), pch=16)
+
+```
+
+Looking at these types of "pairwise plots" can be helpful but it does not scale well and kind of sucks! There must be a better way...
+
+### PCA to the rescue!
+
+The main function for PCA in base R is called `prcomp()`. This function wants the transpose of our input data - i.e. the important foods in as columns and the countries as rows.
+
+
+```{r}
+pca <- prcomp( t(x) )
+summary(pca)
+```
+
+Let's see what is in our PCA result object `pca`
+
+```{r}
+attributes(pca)
+```
+
+The `pca$x` result object is where we will focus first as this details how the countries are related to each other in terms of our new "axis" (a.k.a. "PCs", "eigenvectors", etc.)
+
+```{r}
+head(pca$x)
+```
+
+```{r}
+plot(pca$x[,1], pca$x[,2], pch=16,
+     col=c("orange", "red", "blue", "darkgreen"),
+     xlab="PC1", ylab="PC2")
+```
+
+We can look at the so-called PC "loadings" result object to see how the original foods contribute to our new PCs (i.e. how the original variables contribute to our new better PC variables).
+
+```{r}
+pca$rotation[,1]
+```
+
+
+# What about t(x) as input
+
+```{r}
+y <- t(x)
+dim(y)
+write.csv(y, file="uk_foods_T.csv")
+```
+```{r}
+food <- read.csv("uk_foods_T.csv", row.names = 1)
+head(food)
+```
+
+```{r}
+#pairs(t(food))
+barplot(as.matrix(food), col=as.factor(rownames(food)))
+```
+```{r}
+par(c(10,4,0,0))
+barplot(as.matrix(food), 
+        col=as.factor(rownames(food)), 
+        beside=T, las=2)
+
+```
+

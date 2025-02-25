@@ -1,0 +1,218 @@
+---
+title: "Class 8: PCA mini project"
+author: "Barry (PID: 911)"
+format: html
+---
+
+Today we will do a complete analysis of some breast cancer biopsy data but first let's revisit the main PCA function in R `prcomp()` and see what `scale=TRUE/FALSE` does.
+
+
+```{r}
+head(mtcars)
+```
+
+Find the mean value per column of this dataset?
+
+```{r}
+apply(mtcars, 2, mean)
+```
+
+```{r}
+apply(mtcars, 2, sd)
+```
+
+It is clear "disp" and "hp" have the highest mean values and the highest standard deviation here. They will likely dominate any analysis i do on this dataset. Let's see
+
+
+```{r}
+pc.noscale <- prcomp(mtcars, scale=FALSE)
+pc.scale   <- prcomp(mtcars, scale=TRUE)
+```
+
+
+```{r}
+biplot(pc.noscale)
+```
+```{r}
+pc.noscale$rotation[,1]
+```
+
+plot the loadings
+
+```{r}
+library(ggplot2)
+
+r1 <- as.data.frame(pc.noscale$rotation)
+r1$names <- rownames(pc.noscale$rotation)
+
+ggplot(r1) +
+  aes(PC1, names) +
+  geom_col()
+
+```
+
+```{r}
+r2 <- as.data.frame(pc.scale$rotation)
+r2$names <- rownames(pc.scale$rotation)
+
+ggplot(r2) +
+  aes(PC1, names) +
+  geom_col()
+```
+```{r}
+biplot(pc.scale)
+```
+
+> **Take-home**: Generally we always want to set `scale=TRUE` when we do this type of analysis to avoid our analysis being dominated by individual variables with the largest variance just due to their unit of measurment.
+
+
+# FNA breast cancer data
+
+Load the data into R.
+
+```{r}
+wisc.df <- read.csv("WisconsinCancer.csv", row.names = 1)
+head(wisc.df)
+```
+
+> Q1. How many observations are in this dataset?
+
+```{r}
+nrow(wisc.df)
+```
+
+> Q2. How many of the observations have a malignant diagnosis?
+
+```{r}
+sum(wisc.df$diagnosis == "M")
+```
+
+The `table()` function is super useful here
+```{r}
+table(wisc.df$diagnosis)
+```
+
+> Q3. How many variables/features in the data are suffixed with _mean?
+
+```{r}
+ncol(wisc.df)
+```
+```{r}
+colnames(wisc.df)
+```
+
+A useful function for this is `grep()` 
+
+```{r}
+length( grep("_mean", colnames(wisc.df)) )
+```
+
+Before we go any further we need to exclude the diagnoses colum form any future analysis - this tells us whether a sample to cancer or non-cancer.
+
+```{r}
+diagnosis <- as.factor(wisc.df$diagnosis)
+head(diagnosis)
+```
+
+```{r}
+wisc.data <- wisc.df[,-1]
+```
+
+Lets see if we can cluster the `wisc.data` to find some structure in the dataset.
+
+```{r}
+hc <- hclust( dist(wisc.data))
+plot(hc)
+```
+
+# Principal Component Analysis (PCA)
+
+```{r}
+wisc.pr <- prcomp( wisc.data, scale=T )
+summary(wisc.pr)
+```
+
+```{r}
+biplot(wisc.pr)
+```
+
+This biplot sucks! We need to build our own PCA score plot of PC1 vs PC2 
+
+```{r}
+attributes(wisc.pr)
+```
+
+```{r}
+head(wisc.pr$x)
+```
+
+Plot of PC1 vs PC2 the first two columns
+```{r}
+plot(wisc.pr$x[,1], wisc.pr$x[,2], col=diagnosis)
+```
+Make a ggplot version of this score plot
+
+```{r}
+pc <- as.data.frame(wisc.pr$x)
+
+ggplot(pc) +
+  aes(x=PC1, y=PC2, col=diagnosis) +
+  geom_point()
+```
+
+```{r}
+wisc.pr$rotation["radius_se",1]
+```
+
+## Clustering in PC space
+
+```{r}
+hc <- hclust(dist(wisc.pr$x[,1:2]), method="ward.D2")
+
+plot(hc)
+abline(h=70, col="red")
+```
+
+Cluster membership vector
+```{r}
+grps <- cutree(hc, h=70)
+table(grps)
+```
+
+```{r}
+table(diagnosis)
+```
+
+Cross-table to see how my clustering groups correspond to the expert diagnosis vector of M and B values
+
+```{r}
+table(grps, diagnosis)
+```
+Positive => cancer M
+Negative => non-cancer B
+
+True = cluster/grp 1
+False = grp 2
+
+True Positive 177
+False Positive 18
+True Negative 339
+False Negative 35
+
+
+We can use our PCA results (wisc.pr) to make predictions on new unseen data.
+
+
+```{r}
+#url <- "new_samples.csv"
+url <- "https://tinyurl.com/new-samples-CSV"
+new <- read.csv(url)
+npc <- predict(wisc.pr, newdata=new)
+```
+
+```{r}
+plot(wisc.pr$x[,1:2], col=grps)
+points(npc[,1], npc[,2], col="blue", pch=16, cex=3)
+text(npc[,1], npc[,2], c(1,2), col="white")
+```
+

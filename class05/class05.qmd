@@ -1,0 +1,172 @@
+---
+title: "Class 5: Data Viz with ggplot"
+author: "Barry (PID: 911)"
+format: pdf
+---
+
+## Intro to ggplot
+
+There are may graphics systems in R (ways to make plots and figures). These include "base" R plots. Today we will focus mostly on the **ggplot2** package.
+
+Let's start with a plot of a simple in-bulit dataset called `cars`.
+
+```{r}
+head(cars)
+```
+
+```{r}
+plot(cars)
+```
+
+Let's see how we can make this figure using **ggplot**. First I need to install this package on my computer. To install any R package I use the function `install.packages()`. 
+
+> I will run `install.packages("ggplot2") in my R console not this quarto document!
+
+Before I can use any functions from add on packages I need to load the package from my "library()" with the `library(ggplot2)` call.
+
+```{r}
+library(ggplot2)
+ggplot(cars)
+```
+
+All ggplot figures have at least 3 things (called layers). These include:
+
+- **data** (the input dataset I want to plot from),
+- **aes** (the aesthetic mapping of the data to my plot),
+- **geoms** (the geom_point(), geom_line() etc. that I want to draw).
+
+```{r}
+ggplot(cars) +
+  aes(x=speed, y=dist) +
+  geom_point()
+```
+
+Let's add a line to show the relationship here:
+
+```{r}
+ggplot(cars) +
+  aes(x=speed, y=dist) +
+  geom_point() +
+  geom_smooth(method="lm") +
+  theme_bw() +
+  labs(title="My first GGPLOT")
+
+```
+
+
+> Q1 Which geometric layer should be used to create scatter plots in ggplot2?
+
+geom_point()
+
+## Gene expresion figure
+
+The code to read the dataset
+
+```{r}
+url <- "https://bioboot.github.io/bimm143_S20/class-material/up_down_expression.txt"
+genes <- read.delim(url)
+head(genes)
+```
+
+> How many genes are in this dataset?
+
+```{r}
+nrow(genes)
+```
+
+> Q. Use the table() function on the State column of this data.frame to find out how many ‘up’ regulated genes there are. What is your answer? 
+
+```{r}
+table(genes$State)
+```
+
+> Q. Using your values above and 2 significant figures. What fraction of total genes is up-regulated in this dataset?
+
+```{r}
+round( table(genes$State)/nrow(genes), 4) 
+```
+
+```{r}
+n.tot <- nrow(genes)
+vals <- table(genes$State)
+
+vals.percent <- vals/n.tot * 100
+round(vals.percent, 2)
+```
+
+
+A first plot of this dataset
+
+```{r}
+ggplot(genes) +
+  aes(x=Condition1, y=Condition2, col=State) +
+  geom_point() +
+  theme_bw() +
+  labs(title="Gene Expresion changes upon drug treatement",
+       x="Control Expression",
+       y="Drug Pressenece Expression") +
+  scale_colour_manual( values=c("blue","gray","red") )
+```
+
+```{r}
+p <- ggplot(genes) +
+  aes(x=Condition1, y=Condition2, col=State) +
+  geom_point()
+
+p
+#p + scale_colour_manual( values=c("blue","gray","red") )
+
+```
+
+
+```{r}
+p + labs(title="Hello")
+```
+
+```{r}
+p + theme_minimal()
+```
+
+
+## Exploring the gapmider dataset
+
+The gapminder dataset contains economic and demographic data about various countries since 1952. 
+
+
+
+
+```{r}
+url <- "https://raw.githubusercontent.com/jennybc/gapminder/master/inst/extdata/gapminder.tsv"
+
+gapminder <- read.delim(url)
+
+head(gapminder)
+```
+
+```{r}
+ggplot(gapminder) +
+  aes(x=gdpPercap, y=lifeExp) +
+  geom_point(alpha=0.2)
+```
+
+
+
+## Combining plots with patchwork
+
+
+```{r}
+library(patchwork)
+
+# Setup some example plots 
+p1 <- ggplot(mtcars) + geom_point(aes(mpg, disp))
+p2 <- ggplot(mtcars) + geom_boxplot(aes(gear, disp, group = gear))
+p3 <- ggplot(mtcars) + geom_smooth(aes(disp, qsec))
+p4 <- ggplot(mtcars) + geom_bar(aes(carb))
+
+# Use patchwork to combine them here:
+(p1 | p2 | p3) /
+      p4
+```
+
+
+

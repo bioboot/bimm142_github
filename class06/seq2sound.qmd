@@ -1,0 +1,72 @@
+---
+title: "dna2sound"
+format: html
+---
+
+Install and load required package `install.packages("audio")`
+
+```{r}
+library(audio)
+
+dna_to_sound <- function(sequence, duration = 0.2) {
+  # Input validation
+  if (!all(strsplit(sequence, "")[[1]] %in% c("A", "T", "G", "C"))) {
+    stop("Sequence must contain only A, T, G, C")
+  }
+  
+  # Define frequencies for each base (using different musical notes)
+  note_mapping <- list(
+    "A" = 440.00,  # A4 note
+    "T" = 493.88,  # B4 note
+    "G" = 587.33,  # D5 note
+    "C" = 659.25   # E5 note
+  )
+  
+  # Convert sequence to individual bases
+  bases <- strsplit(sequence, "")[[1]]
+  
+  # Create sound wave for each base
+  sample_rate <- 44100
+  t <- seq(0, duration, 1/sample_rate)
+  
+  # Initialize empty wave
+  wave <- numeric(0)
+  
+  # Generate sound for each base
+  for (base in bases) {
+    freq <- note_mapping[[base]]
+    base_wave <- sin(2 * pi * freq * t)
+    # Apply simple envelope to avoid clicks
+    envelope <- c(seq(0, 1, length.out = 100), 
+                 rep(1, length(base_wave) - 200),
+                 seq(1, 0, length.out = 100))
+    base_wave <- base_wave * envelope
+    wave <- c(wave, base_wave)
+  }
+  
+  # Normalize wave
+  wave <- wave / max(abs(wave))
+  
+  # Play the sound
+  play(wave)
+  
+  # Return wave for visualization or further processing
+  return(wave)
+}
+```
+
+```{r}
+# Example usage
+sequence <- "GGAAAAGGGCCCGGGTTGGAAAAGGGCCCGGGTT" #ATGCATGC"
+wave <- dna_to_sound(sequence)
+
+```
+
+
+
+```{r}
+library(bio3d)
+sequence <- "GGAAAAGG"
+
+```
+

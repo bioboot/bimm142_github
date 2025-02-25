@@ -1,0 +1,228 @@
+---
+title: "R functions"
+author: "Barry (PID: 911)"
+format: html
+---
+
+Today we will get more exposure to functions in R. We call functions to do all our work and today we will learn how to write our own.
+
+## A first silly function
+
+Note that arguments 2 and 3 have default values (because we set y=0 and z=0) so we don't have to supply them when we call our function.
+
+```{r}
+add <- function(x, y=0, z=0) {
+  x + y + z
+}
+```
+
+Can I just use this
+
+```{r}
+add(1,10)
+```
+
+```{r}
+add(1,1)
+add(x=1, y=c(10, 100))
+```
+
+```{r}
+add(100)
+```
+```{r}
+add(100, 10, 1)
+```
+
+## A second more fun function
+
+Let's write a function that generates random nucleotide sequences.
+
+We can make use of the in-built `sample()` function in R to help us here.
+
+```{r}
+sample(x=1:10, size=9)
+```
+
+```{r}
+sample(x=1:10, size=11, replace = TRUE)
+```
+
+> Q. Can you use `sample()` to generate a random nucleotide sequence of length 5.
+
+
+```{r}
+sample(x=c("A","C","G","T"), size=5, replace = T)
+```
+
+> Q. Write a function `generate_dna()` that makes a nucleotide sequence of a user specified length.
+
+Every function in R has at least 3 things:
+
+- a **name** (in our case "generate_dna")
+- one or more **input arguments** (the "length" of sequence we want)
+- a **body** (R code that does the work)
+
+```{r}
+generate_dna <- function(length=5) {
+  bases <- c("A","C","G","T")
+  sample(bases, size=length, replace = TRUE)
+}
+```
+
+```{r}
+generate_dna(10)
+generate_dna(100)
+```
+
+```{r}
+generate_dna(20)
+```
+
+
+> Q. Can you write a `generate_protein()` function that returns ammino acid sequence of a user requested length?
+
+```{r}
+generate_protein <- function(length=5) {
+  aa <- bio3d::aa.table$aa1[1:20]
+  sample(aa, size=length, replace=TRUE)
+}
+```
+
+```{r}
+generate_protein(10)
+```
+
+I want my output of this function not to be a vector with one amino acid per element but rather a one element single string.
+
+```{r}
+bases <- c("A", "G", "C", "T")
+paste(bases, collapse="")
+```
+```{r}
+generate_protein <- function(length=5) {
+  aa <- bio3d::aa.table$aa1[1:20]
+  s <- sample(aa, size=length, replace=TRUE)
+  paste(s, collapse="")
+}
+```
+
+```{r}
+generate_protein()
+```
+
+> Q. Generate protein sequences from length 6 to 12?
+
+```{r}
+generate_protein(length = 6)
+generate_protein(length = 7)
+generate_protein(length = 8)
+
+
+```
+
+We can use the useful utility function `sapply()` to help us "apply" our function over all the values 6 to 12.
+
+```{r}
+ans <- sapply(6:12, generate_protein)
+ans
+```
+
+```{r}
+cat( paste(">ID.", 6:12, sep="", "\n", ans, "\n") )
+```
+
+> Q. Are any of these sequences unique in nature - i.e. never found in nature. We can search "refseq-protein" and look for 100% Ide and 100% coverage matches with BLASTp
+
+
+```{r}
+library(bio3d)
+
+#as.fasta(as.matrix(ans))
+```
+
+
+```{r}
+generate_protein <- function(length=5, collapse=FALSE) {
+  aa <- bio3d::aa.table$aa1[1:20]
+  s <- sample(aa, size=length, replace=TRUE)
+  if(collapse) {
+    return( paste(s, collapse="") )
+  } else {
+    return(s)
+  }
+}
+
+```
+
+
+```{r}
+generate_protein(5)
+generate_protein(5, T)
+```
+
+```{r}
+s <- generate_protein(5)
+as.fasta(s)
+```
+
+```{r}
+write.fasta(as.fasta(s), file="tmp.fa", append = TRUE)
+```
+
+```{r}
+ans <- sapply(6:12, generate_protein)
+ans
+```
+
+
+
+```{r}
+generate_protein <- function(length=5, collapse=FALSE, fasta=FALSE) {
+  aa <- bio3d::aa.table$aa1[1:20]
+  s <- sample(aa, size=length, replace=TRUE)
+
+  if(collapse) {
+    s <- paste(s, collapse="") 
+  } 
+  if(fasta) {
+    s <- as.fasta(s)
+  }
+  return(s)
+}
+
+```
+
+```{r}
+
+
+write.fasta(generate_protein(9, fasta=T), file="tmp.fa")
+```
+
+
+
+```{r}
+cat(">id.",9, "\n", generate_protein(9), sep="")
+```
+```{r}
+cat(">id.",9, "\n", ans[[5]], sep="")
+```
+
+
+```{r}
+
+cat(">id.",9, "\n", generate_protein(9, collapse = T), sep="")
+```
+
+```{r}
+ans <- sapply(6:12, generate_protein, collapse=T)
+ans
+```
+```{r}
+cat( paste(">id.",6:12, "\n", ans, "\n", sep=""), sep="" )
+```
+
+```{r}
+write.fasta(as.fasta(as.matrix(ans)), file="tmp.fa")
+```
+

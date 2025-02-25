@@ -1,2 +1,2 @@
 # bimm142_github
-My glasswork from W25 BIMM143
+My classwork from W25 BIMM143 at UCSD

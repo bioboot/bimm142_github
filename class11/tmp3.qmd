@@ -1,0 +1,255 @@
+---
+title: "A new view.pdb function based on NGL"
+author: "Barry"
+format: html
+---
+
+I have experimented with r3dmol and NGLVieweR packages and decided that [NGLVieweR is the best option going forward]{.underline} - primarily as r3dmol has no atom-based selection and they have no plans to upgrade to the latest JS library.
+
+
+```{r}
+#| warning: false
+#| message: false
+
+library(NGLVieweR)
+library(bio3d)
+
+ras <- read.pdb("5p21")
+pdb <- read.pdb("1hsg")
+pc  <- read.pdb("pca.pdb", multi = T)
+```
+
+```{r}
+source("ngl_functions.R")
+```
+
+```{r}
+n <- view.pdb(pdb)
+```
+
+```{r}
+n
+```
+
+
+
+```{r}
+view.pdb(ras)
+```
+
+```{r}
+view.pdb(pc)
+```
+
+
+```{r}
+sele <- atom.select(ras, resno=c(16, 57, 35))
+view.pdb(ras, highlight = sele)
+```
+
+```{r}
+NGLVieweR(pdb2ngl(pdb), format="pdb") |>
+  addRepresentation("cartoon")
+```
+```{r}
+NGLVieweR(pdb2ngl(pc), format="pdb") |>
+  addRepresentation("cartoon")
+```
+
+How about an NMA result
+
+```{r}
+adk <- read.pdb("6s36")
+view.pdb(adk)
+```
+```{r}
+m <- nma(adk)
+a <- mktrj(m, file="nma.pdb")
+```
+
+```{r}
+n <- read.pdb("nma.pdb", multi=T)
+view.pdb(n)
+```
+
+
+
+
+
+```{r}
+#NGLVieweR(b2n(pc), format="pdb") |>
+#  addRepresentation("cartoon")
+```
+
+```{r}
+view.pdb(pc)
+```
+
+```{r}
+#data <- "pca.pdb"
+#data <- paste(readLines(data), collapse = "\n")
+```
+
+```{r}
+#NGLVieweR(data, format="pdb") |>
+#  addRepresentation("cartoon")
+```
+
+
+
+```{r}
+#x <- b2n(p)
+```
+
+
+```{r}
+view.pdb(pdb)
+```
+
+```{r}
+sele <- atom.select(pdb, resno=c(25, 50))
+
+view.pdb(pdb, highlight = sele, 
+         chain.colors = c("navy","orange"),
+         backgroundColor = "pink",
+         highlight.style = "spacefill")
+```
+
+```{r}
+m <- view.pdb(ras)
+
+ras2 <- read.pdb("4q21")
+
+m |> 
+  addStructure(pdb2ngl(ras2), format="pdb") |>
+  addRepresentation("cartoon", param = list(color = "orange"))
+
+```
+
+
+How about `pdbs` objects...
+
+```{r}
+#| message: false
+pth <- "~/Desktop/courses/BIMM143/class10/pdbs/split_chain/"
+files <- list.files(path=pth, full.names = T)
+pdbs <- pdbaln(files, fit=T, exefile="msa")
+```
+
+
+Optional core fitting
+```{r}
+#| message: false
+core <- core.find(pdbs)
+core.inds <- print(core)
+xyz <- pdbfit(pdbs, core.inds, outpath="corefit_structures")
+pdbs$xyz <- xyz
+```
+
+```{r}
+## Convert back to PDB objects
+all.pdbs <- pdbs2pdb(pdbs)
+```
+
+
+```{r}
+## Access the first PDB object
+# all.pdbs[[1]]
+
+mycols <- vmd_colors()
+names(mycols) <- NULL
+
+m <- view.pdb(all.pdbs[[1]], backgroundColor = "black")
+
+for(k in 2:length(pdbs$id)) {
+  m <- m |>
+    addStructure(pdb2ngl(all.pdbs[[k]]), format="pdb") |>
+      addRepresentation("line", param = list(color = mycols[k]))
+}
+```
+
+```{r}
+m
+```
+
+```{r}
+m <- view.pdb(all.pdbs[[1]], backgroundColor = "black")
+m
+```
+
+```{r}
+NGLVieweR(pdb2ngl( all.pdbs[[1]] ), format="pdb") |>
+  addRepresentation("cartoon")
+  
+```
+
+
+
+PDB code 1crr is a NMR ras structure
+
+
+
+
+
+```{r}
+# files see above
+nfiles <- length(files)
+cols <- vmd_colors(nfiles)
+names(cols) <- NULL
+
+x <- NGLVieweR(files[1]) |>
+  addRepresentation("cartoon", param = list(color = cols[1]))
+
+for(i in 2:nfiles) {
+  cat(files[i],"\n")
+  x <- x |> addStructure(files[i]) |>
+ addRepresentation("cartoon", param = list(color = cols[i]))
+}
+  
+x
+```
+
+
+How about a multi-model PDB
+
+```{r}
+# NMR ras structure
+id <- "1CRR"
+
+NGLVieweR(id) |>
+  addRepresentation("cartoon")
+```
+```{r}
+nmr <- read.pdb(id, multi = T)
+nmr
+```
+
+```{r}
+nmr <- read.pdb("1crr", multi = F)
+nmr
+```
+
+```{r}
+NGLVieweR("pca.pdb") |>
+  addRepresentation("cartoon")
+```
+
+```{r}
+p <- read.pdb("pca.pdb", multi = T)
+```
+
+```{r}
+NGLVieweR(pdb2ngl(p), format="pdb") |>
+  addRepresentation("cartoon")
+```
+
+```{r}
+data <- "pca.pdb"
+data <- paste(readLines(data), collapse = "\n")
+```
+
+```{r}
+NGLVieweR(data, format="pdb") |>
+  addRepresentation("cartoon")
+```
+

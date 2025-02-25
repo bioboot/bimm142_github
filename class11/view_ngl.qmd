@@ -1,0 +1,151 @@
+---
+title: "A new view.pdb function based on NGL"
+author: "Barry"
+date: 2025-02-14
+format: html
+---
+
+I have experimented with r3dmol and NGLVieweR packages and decided that [NGLVieweR is the best option going forward]{.underline} - primarily as r3dmol has no atom-based selection and they have no plans to upgrade to the latest JS library.
+
+Note, there appears to be a max number of viewers you can have in a HTML report!
+
+```{r, message=FALSE}
+library(NGLVieweR)
+library(bio3d)
+source("ngl_functions.R")
+```
+
+Some input files to play with:
+
+```{r, message=FALSE, warning=FALSE}
+ras <- read.pdb("5p21")
+pdb <- read.pdb("1hsg")
+pc  <- read.pdb("pca.pdb", multi = T)
+m <- read.pdb("nma.pdb", multi = T)
+```
+
+Default view for a multi-chain structure
+
+```{r}
+view.pdb(pdb)
+```
+
+and a single chain structure
+
+```{r}
+view.pdb(ras)
+```
+
+A multi-model file will show all models
+
+```{r}
+#view.pdb(pc)
+```
+
+```{r}
+view.pdb(m)
+```
+
+```{r}
+sele <- atom.select(ras, resno=c(16, 57, 35))
+view.pdb(ras, highlight = sele)
+```
+
+Or just NGL without view.pdb
+
+```{r}
+#NGLVieweR(pdb2ngl(pdb), format="pdb") |>
+#  addRepresentation("cartoon")
+```
+
+## How about an NMA result
+
+```{r}
+#adk <- read.pdb("6s36")
+#view.pdb(adk)
+```
+
+```{r}
+#m <- nma(adk)
+#a <- mktrj(m, file="nma.pdb")
+```
+
+```{r}
+#n <- read.pdb("nma.pdb", multi=T)
+#view.pdb(n)
+```
+
+## Selection
+
+```{r}
+sele <- atom.select(pdb, resno=c(25, 50))
+
+view.pdb(pdb, highlight = sele, 
+         chain.colors = c("navy","orange"),
+         backgroundColor = "pink",
+         highlight.style = "spacefill")
+```
+
+## Multi-structure
+
+```{r}
+#m <- view.pdb(ras)
+
+#ras2 <- read.pdb("4q21")
+
+#m |> 
+#  addStructure(pdb2ngl(ras2), format="pdb") |>
+#  addRepresentation("cartoon", param = list(color = "orange"))
+
+```
+
+## Multi-structure PDBS objects
+
+Need to ave a `view.pdbs()` version that adds a different color model for each structure in the ensemble.
+
+
+How about `pdbs` objects...
+
+```{r, message=FALSE, warning=FALSE}
+pth <- "~/Desktop/courses/BIMM143/class10/pdbs/split_chain/"
+files <- list.files(path=pth, full.names = T)
+pdbs <- pdbaln(files, fit=T, exefile="msa")
+```
+
+
+```{r}
+rd <- rmsd(pdbs)
+library(pheatmap)
+pheatmap(rd)
+```
+
+```{r}
+km <- kmeans(rd, centers = 3)
+
+# Color by cluster membership
+my.colors <- vmd_colors()[km$cluster]
+```
+
+```{r}
+view.pdbs(pdbs, representation = "cartoon")
+```
+
+
+
+```{r}
+view.pdbs(pdbs, colors = my.colors, representation = "cartoon")
+```
+
+
+```{r}
+#view.pdbs(pdbs, colors = c("red","blue") )
+```
+
+```{r}
+pc <- pca(pdbs)
+mktrj(pc, file="tmp.pdb")
+
+p <- read.pdb("tmp.pdb", multi=T)
+view.pdb(p)
+```
+
